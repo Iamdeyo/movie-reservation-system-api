@@ -17,7 +17,7 @@ class TheatersFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => 'Theater ' . $this->faker->unique()->numberBetween(1, 100),
         ];
     }
 }

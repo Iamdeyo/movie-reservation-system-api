@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Theaters;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +18,9 @@ class SeatsFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'theaters_id' => Theaters::factory(),
+            'row' => $this->faker->randomElement(['A', 'B', 'C', 'D']),
+            'number' => $this->faker->numberBetween(1, 10),
         ];
     }
 }

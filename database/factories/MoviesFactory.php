@@ -17,7 +17,10 @@ class MoviesFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'title' => $this->faker->sentence(3),
+            'description' => $this->faker->paragraph(),
+            'poster' => $this->faker->imageUrl(300, 450, 'movies'),
+            'duration' => $this->faker->numberBetween(75, 180),
         ];
     }
 }

@@ -2,6 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Seats;
+use App\Models\Showtimes;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +20,9 @@ class ReservationsFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'user_id' => User::factory(),
+            'showtimes_id' => Showtimes::factory(),
+            'seats_id' => Seats::factory(),
         ];
     }
 }

@@ -16,8 +16,10 @@ class GenresFactory extends Factory
      */
     public function definition(): array
     {
+        $genres = ['Action', 'Comedy', 'Romance', 'Drama', 'Thriller', 'Horror', 'Sci-Fi', 'Fantasy', 'Animation'];
+
         return [
-            //
+            'name' => $this->faker->unique()->randomElement($genres),
         ];
     }
 }

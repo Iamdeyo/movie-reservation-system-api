@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('reservations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('showtime_id')->constrained()->onDelete('cascade');
-            $table->foreignId('seat_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('showtimes_id')->constrained('showtimes')->onDelete('cascade');
+            $table->foreignId('seats_id')->constrained('seats')->onDelete('cascade');
             $table->timestamps();
-            $table->unique(['showtime_id', 'seat_id']); // prevent double booking
+            $table->unique(['showtimes_id', 'seats_id']); // prevent double booking
         });
     }
 

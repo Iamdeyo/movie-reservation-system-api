@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class ReservationsSeeder extends Seeder
+class UserSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -14,12 +14,14 @@ class ReservationsSeeder extends Seeder
     public function run(): void
     {
         User::factory()
-            ->count(5)
-            ->hasReservations(1)
-            ->create();
-        User::factory()
             ->count(10)
-            ->hasReservations(10)
             ->create();
+
+        User::factory()
+            ->create([
+                'name' => 'Admin User',
+                'email' => 'admin@example.com',
+                'role' => 'admin',
+            ]);
     }
 }

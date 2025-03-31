@@ -12,7 +12,7 @@ class Movies extends Model
 
     public function genres()
     {
-        return $this->belongsToMany(Genres::class);
+        return $this->belongsToMany(Genres::class, 'genre_movie');
     }
 
     public function showtimes()
