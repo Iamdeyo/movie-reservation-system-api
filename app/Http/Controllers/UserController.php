@@ -30,7 +30,7 @@ class UserController extends Controller
 
         // 🔽 Sorting
         $sortBy = $request->query('sortBy', 'date'); // Default: date
-        $sortOrder = $request->query('sort', 'desc'); // Default: most recent first
+        $sortOrder = $request->query('order', 'desc'); // Default: most recent first
 
         if ($sortBy === 'name') {
             $query->orderBy('name', $sortOrder);
