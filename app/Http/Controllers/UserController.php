@@ -60,9 +60,14 @@ class UserController extends Controller
     public function show(string $id)
     {
         $user = User::find($id);
+        $userReqData = request()->user();
 
         if (!$user) {
             return $this->ResponseJson(false, null, 'User not found', null, 404);
+        }
+
+        if ($userReqData->role === 'user' && $user->id != $userReqData->id) {
+            return $this->ResponseJson(false, null, "Unauthorized. Required role: admin", null, 403);
         }
 
         return $this->ResponseJson(true, new UserResource($user), 'User retrieved successfully');
@@ -75,9 +80,14 @@ class UserController extends Controller
     public function update(Request $request, string $id)
     {
         $user = User::find($id);
+        $userReqData = $request->user();
 
         if (!$user) {
             return $this->ResponseJson(false, null, 'User not found', [], 404);
+        }
+
+        if ($userReqData->role === 'user' && $user->id != $userReqData->id) {
+            return $this->ResponseJson(false, null, "Unauthorized. Required role: admin", null, 403);
         }
 
         $validated = $request->validate([
@@ -101,9 +111,14 @@ class UserController extends Controller
     public function destroy(string $id)
     {
         $user = User::find($id);
+        $userReqData = request()->user();
 
         if (!$user) {
             return $this->ResponseJson(false, null, 'User not found', [], 404);
+        }
+
+        if ($userReqData->role === 'user' && $user->id != $userReqData->id) {
+            return $this->ResponseJson(false, null, "Unauthorized. Required role: admin", null, 403);
         }
 
         $user->delete();
