@@ -10,6 +10,11 @@ class Seats extends Model
     /** @use HasFactory<\Database\Factories\SeatsFactory> */
     use HasFactory;
 
+    protected $fillable = [
+        'row',
+        'number'
+    ];
+
     public function theater()
     {
         return $this->belongsTo(Theaters::class);

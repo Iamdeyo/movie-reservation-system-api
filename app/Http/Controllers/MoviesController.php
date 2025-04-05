@@ -5,15 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Movies;
 use App\Http\Requests\StoreMoviesRequest;
 use App\Http\Requests\UpdateMoviesRequest;
+use App\Http\Resources\MoviesCollection;
+use Illuminate\Http\JsonResponse;
 
 class MoviesController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        //
+        $movies = Movies::all();
+        return $this->ResponseJson(true, new MoviesCollection($movies), "Movies found", null, 200);
     }
 
     /**

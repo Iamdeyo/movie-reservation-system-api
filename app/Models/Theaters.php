@@ -9,6 +9,12 @@ class Theaters extends Model
 {
     /** @use HasFactory<\Database\Factories\TheatersFactory> */
     use HasFactory;
+
+    protected $fillable = [
+        'name',
+    ];
+
+
     public function seats()
     {
         return $this->hasMany(Seats::class);
