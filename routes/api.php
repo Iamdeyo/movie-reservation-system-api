@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GenresController;
 use App\Http\Controllers\MoviesController;
 use App\Http\Controllers\TheatersController;
 use App\Http\Controllers\UserController;
+use App\Models\Genres;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -45,4 +47,11 @@ Route::group(['prefix' => 'theaters'], function () {
     Route::post('', [TheatersController::class, 'store']);
     Route::patch('{id}', [TheatersController::class, 'update']);
     Route::delete('{id}', [TheatersController::class, 'destroy']);
+});
+
+Route::group(['prefix' => 'genres'], function () {
+    Route::get('', [GenresController::class, 'index']);
+    Route::post('', [GenresController::class, 'store']);
+    Route::patch('{id}', [GenresController::class, 'update']);
+    Route::delete('{id}', [GenresController::class, 'destroy']);
 });
