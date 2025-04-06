@@ -6,25 +6,59 @@ use App\Models\Movies;
 use App\Http\Requests\StoreMoviesRequest;
 use App\Http\Requests\UpdateMoviesRequest;
 use App\Http\Resources\MoviesCollection;
+use App\Http\Resources\MoviesResource;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MoviesController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $movies = Movies::all();
-        return $this->ResponseJson(true, new MoviesCollection($movies), "Movies found", null, 200);
-    }
+        $query = Movies::query();
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        // 🎯 Filter by genre_id (many-to-many)
+        if ($genreId = $request->query('genreId')) {
+            $query->whereHas('genres', function ($q) use ($genreId) {
+                $q->where('genres.id', $genreId);
+            });
+        }
+
+        // 🔍 Search by title
+        if ($search = $request->query('search')) {
+            $query->where('title', 'like', "%$search%");
+        }
+
+        // 🔽 Sorting
+        $sortOrder = $request->query('order', 'desc');
+        $sortBy = $request->query('sortBy', 'date');
+
+        if ($sortBy === 'name') {
+            $query->orderBy('title', $sortOrder);
+        } else {
+            $query->orderBy('created_at', $sortOrder);
+        }
+
+        // 📄 Pagination
+        $movies = $query->with(['genres', 'showtimes'])->paginate(10)->appends($request->query());
+
+        return $this->ResponseJson(
+            true,
+            new MoviesCollection($movies),
+            'Movies found',
+            [
+                'current_page' => $movies->currentPage(),
+                'total' => $movies->total(),
+                'per_page' => $movies->perPage(),
+                'last_page' => $movies->lastPage(),
+            ],
+            200
+        );
     }
 
     /**
@@ -32,38 +66,201 @@ class MoviesController extends Controller
      */
     public function store(StoreMoviesRequest $request)
     {
-        //
+        DB::beginTransaction();
+
+        try {
+            // Generate filename
+            $posterName = 'poster_' . now()->format('Ymd_His') . '_' . Str::random(8) . '.' . $request->file('poster')->extension();
+
+            // Store file
+            $posterPath = $request->file('poster')->storeAs(
+                'posters',
+                $posterName,
+                'public'
+            );
+
+            // 2. Create movie
+            $movie = Movies::create([
+                'title' => $request->title,
+                'description' => $request->description,
+                'duration' => $request->duration,
+                'poster' => $posterPath,
+            ]);
+
+            // 3. Sync genres (if provided)
+            if ($request->has('genre_ids')) {
+                $movie->genres()->sync($request->genre_ids);
+            }
+
+            DB::commit();
+
+            return $this->ResponseJson(
+                true,
+                new MoviesResource($movie),
+                'Movie created successfully',
+                null,
+                201
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            // Delete the uploaded file if transaction failed
+            if (isset($posterPath)) {
+                Storage::disk('public')->delete($posterPath);
+            }
+
+            return $this->ResponseJson(
+                false,
+                null,
+                'Failed to create movie: ' . $e->getMessage(),
+                null,
+                500
+            );
+        }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Movies $movies)
+    public function show(string $id)
     {
-        //
+        $movie = Movies::with([
+            'genres',
+            'showtimes.theaters'
+        ])->find($id);
+
+        if (!$movie) {
+            return $this->ResponseJson(false, null, "Movies Not found", null, 404);
+        }
+
+        return $this->ResponseJson(true, new MoviesResource($movie), "Movies found", null, 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Movies $movies)
-    {
-        //
-    }
+
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateMoviesRequest $request, Movies $movies)
+    public function update(UpdateMoviesRequest $request, string $id)
     {
-        //
+        DB::beginTransaction();
+
+        try {
+            $movie = Movies::find($id);
+
+            if (!$movie) {
+                return $this->ResponseJson(
+                    false,
+                    null,
+                    'Movie not found',
+                    null,
+                    404
+                );
+            }
+
+            // Handle file upload if new poster provided
+            if ($request->hasFile('poster')) {
+                // Delete old poster if exists
+                if ($movie->poster && Storage::disk('public')->exists($movie->poster)) {
+                    Storage::disk('public')->delete($movie->poster);
+                }
+
+                // Store new poster
+                $posterName = 'poster_' . now()->format('Ymd_His') . '_' . Str::random(8) . '.' . $request->file('poster')->extension();
+                $posterPath = $request->file('poster')->storeAs(
+                    'posters',
+                    $posterName,
+                    'public'
+                );
+                $movie->poster = $posterPath;
+            }
+
+            // Update other fields
+            $movie->fill($request->only(['title', 'description', 'duration']));
+
+            // Update genres if provided
+            if ($request->has('genre_ids')) {
+                $movie->genres()->sync($request->genre_ids);
+            }
+
+            $movie->save();
+            DB::commit();
+
+            return $this->ResponseJson(
+                true,
+                new MoviesResource($movie),
+                'Movie updated successfully',
+                null,
+                200
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return $this->ResponseJson(
+                false,
+                null,
+                'Failed to update movie: ' . $e->getMessage(),
+                null,
+                500
+            );
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Movies $movies)
+    public function destroy(string $id)
     {
-        //
+        DB::beginTransaction();
+
+        try {
+            // Find the movie with its relationships
+            $movie = Movies::with('genres', 'showtimes')->find($id);
+
+            if (!$movie) {
+                return $this->ResponseJson(
+                    false,
+                    null,
+                    'Movie not found',
+                    null,
+                    404
+                );
+            }
+
+            // Store the poster path before deletion
+            $posterPath = $movie->poster;
+
+            // Delete associated records
+            $movie->genres()->detach(); // Remove all genre relationships
+            $movie->showtimes()->delete(); // Delete all showtimes
+
+            // Delete the movie
+            $movie->delete();
+
+            // Delete the poster file if it exists
+            if ($posterPath && Storage::disk('public')->exists($posterPath)) {
+                Storage::disk('public')->delete($posterPath);
+            }
+
+            DB::commit();
+
+            return $this->ResponseJson(
+                true,
+                null,
+                'Movie deleted successfully',
+                null,
+                200
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return $this->ResponseJson(
+                false,
+                null,
+                'Failed to delete movie: ' . $e->getMessage(),
+                null,
+                500
+            );
+        }
     }
 }

@@ -15,7 +15,7 @@ class Seats extends Model
         'number'
     ];
 
-    public function theater()
+    public function theaters()
     {
         return $this->belongsTo(Theaters::class);
     }

@@ -20,6 +20,8 @@ class MoviesResource extends JsonResource
             'description' => $this->description,
             'poster' => $this->poster,
             'duration' => $this->duration,
+            'genres' => GenresResource::collection($this->whenLoaded('genres')),
+            'showtimes' => ShowtimesResource::collection($this->whenLoaded('showtimes')),
             'createdAt' => $this->created_at,
             'updatedAt' => $this->updated_at,
         ];

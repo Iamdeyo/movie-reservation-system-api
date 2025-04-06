@@ -33,6 +33,10 @@ Route::group(['prefix' => 'users',], function () {
 
 Route::group(['prefix' => 'movies'], function () {
     Route::get('', [MoviesController::class, 'index']);
+    Route::post('', [MoviesController::class, 'store']);
+    Route::get('{id}', [MoviesController::class, 'show']);
+    Route::patch('{id}', [MoviesController::class, 'update']);
+    Route::delete('{id}', [MoviesController::class, 'destroy']);
 });
 
 Route::group(['prefix' => 'theaters'], function () {

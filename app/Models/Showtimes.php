@@ -10,12 +10,12 @@ class Showtimes extends Model
     /** @use HasFactory<\Database\Factories\ShowtimesFactory> */
     use HasFactory;
 
-    public function movie()
+    public function movies()
     {
         return $this->belongsTo(Movies::class);
     }
 
-    public function theater()
+    public function theaters()
     {
         return $this->belongsTo(Theaters::class);
     }
