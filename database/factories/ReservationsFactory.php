@@ -23,6 +23,7 @@ class ReservationsFactory extends Factory
             'user_id' => User::factory(),
             'showtimes_id' => Showtimes::factory(),
             'seats_id' => Seats::factory(),
+            'reservation_date' => $this->faker->dateTimeBetween('-7 days', '+7 days')->format('Y-m-d')
         ];
     }
 }

@@ -6,28 +6,29 @@ use App\Models\Movies;
 use App\Models\Theaters;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Showtimes>
- */
 class ShowtimesFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
-        $start = $this->faker->dateTimeBetween('now', '+7 days');
-        $duration = $this->faker->numberBetween(90, 180);
-        $end = (clone $start)->modify("+$duration minutes");
+        // Get a random movie or create one if none exists
+        $movie = Movies::inRandomOrder()->first() ?? Movies::factory()->create();
+
+        // Generate showtime between 8AM and 11PM
+        $start = $this->faker->dateTimeBetween('today 8:00', 'today 23:00');
+        $end = (clone $start)->modify("+{$movie->duration} minutes");
+
+        // Adjust if showtime crosses midnight
+        if ($end->format('H:i') < $start->format('H:i')) {
+            $start = $this->faker->dateTimeBetween('today 8:00', 'today 22:00');
+            $end = (clone $start)->modify("+{$movie->duration} minutes");
+        }
 
         return [
-            'movies_id' => Movies::factory(),
-            'theaters_id' => Theaters::factory(),
-            'start_time' => $start,
-            'end_time' => $end,
-            'price' => $this->faker->randomFloat(2, 5, 20),
+            'movies_id' => $movie->id,
+            'theaters_id' => Theaters::inRandomOrder()->first()?->id ?? Theaters::factory(),
+            'start_time' => $start->format('H:i:s'),
+            'end_time' => $end->format('H:i:s'),
+            'price' => $this->faker->randomFloat(2, 5000, 7500), // Realistic cinema pricing
         ];
     }
 }

@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('movies_id')->constrained('movies')->onDelete('cascade');
             $table->foreignId('theaters_id')->constrained('theaters')->onDelete('cascade');
-            $table->dateTime('start_time');
-            $table->dateTime('end_time');
+            $table->time('start_time');
+            $table->time('end_time');
             $table->decimal('price', 8, 2);
             $table->timestamps();
         });
