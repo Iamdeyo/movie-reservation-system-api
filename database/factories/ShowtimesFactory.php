@@ -28,6 +28,7 @@ class ShowtimesFactory extends Factory
             'theaters_id' => Theaters::inRandomOrder()->first()?->id ?? Theaters::factory(),
             'start_time' => $start->format('H:i:s'),
             'end_time' => $end->format('H:i:s'),
+            'end_date' => $this->faker->optional()->dateTime(),
             'price' => $this->faker->randomFloat(2, 5000, 7500), // Realistic cinema pricing
         ];
     }

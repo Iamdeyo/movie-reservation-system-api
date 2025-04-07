@@ -34,6 +34,7 @@ Route::group(['prefix' => 'users',], function () {
 });
 
 Route::group(['prefix' => 'movies'], function () {
+    Route::get('all', [MoviesController::class, 'all']);
     Route::get('', [MoviesController::class, 'index']);
     Route::post('', [MoviesController::class, 'store']);
     Route::get('{id}', [MoviesController::class, 'show']);

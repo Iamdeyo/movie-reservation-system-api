@@ -18,8 +18,8 @@ class ReservationsSeeder extends Seeder
             ->hasReservations(1)
             ->create();
         User::factory()
-            ->count(10)
-            ->hasReservations(10)
+            ->count(5)
+            ->hasReservations(2)
             ->create();
     }
 }

@@ -22,6 +22,7 @@ class ShowtimesResource extends JsonResource
             "theater" => new TheatersResource($this->whenLoaded('theaters')),
             "startTime" => $this->start_time,
             "endTime" => $this->end_time,
+            "endDate" => $this->end_date,
             "price" => $this->price,
         ];
     }

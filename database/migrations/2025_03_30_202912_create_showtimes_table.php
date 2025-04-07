@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('theaters_id')->constrained('theaters')->onDelete('cascade');
             $table->time('start_time');
             $table->time('end_time');
+            $table->dateTime('end_date')->nullable();
             $table->decimal('price', 8, 2);
             $table->timestamps();
         });

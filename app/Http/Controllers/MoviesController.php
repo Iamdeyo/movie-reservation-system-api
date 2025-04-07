@@ -34,6 +34,66 @@ class MoviesController extends Controller
             $query->where('title', 'like', "%$search%");
         }
 
+        // ❗ Only include movies with valid showtimes
+        $query->whereHas('showtimes', function ($q) {
+            $q->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>', now());
+            });
+        });
+
+        // 🔽 Sorting
+        $sortOrder = $request->query('order', 'desc');
+        $sortBy = $request->query('sortBy', 'date');
+
+        if ($sortBy === 'name') {
+            $query->orderBy('title', $sortOrder);
+        } else {
+            $query->orderBy('created_at', $sortOrder);
+        }
+
+        // 📄 Pagination with eager loading of valid showtimes
+        $movies = $query->with([
+            'genres',
+            'showtimes' => function ($q) {
+                $q->where(function ($query) {
+                    $query->whereNull('end_date')
+                        ->orWhere('end_date', '>', now());
+                });
+            },
+        ])->paginate(10)->appends($request->query());
+
+
+
+        return $this->ResponseJson(
+            true,
+            new MoviesCollection($movies),
+            'Movies found',
+            [
+                'current_page' => $movies->currentPage(),
+                'total' => $movies->total(),
+                'per_page' => $movies->perPage(),
+                'last_page' => $movies->lastPage(),
+            ],
+            200
+        );
+    }
+    public function all(Request $request): JsonResponse
+    {
+        $query = Movies::query();
+
+        // 🎯 Filter by genre_id (many-to-many)
+        if ($genreId = $request->query('genreId')) {
+            $query->whereHas('genres', function ($q) use ($genreId) {
+                $q->where('genres.id', $genreId);
+            });
+        }
+
+        // 🔍 Search by title
+        if ($search = $request->query('search')) {
+            $query->where('title', 'like', "%$search%");
+        }
+
         // 🔽 Sorting
         $sortOrder = $request->query('order', 'desc');
         $sortBy = $request->query('sortBy', 'date');
@@ -129,8 +189,33 @@ class MoviesController extends Controller
             'showtimes.theaters'
         ])->find($id);
 
+
+        // $movie = Movies::where('id', $id)
+        //     ->whereHas('showtimes', function ($query) {
+        //         $now = now();
+
+        //         $query->where(function ($q) use ($now) {
+        //             $q->whereNull('end_date')
+        //                 ->orWhere('end_date', '>', $now);
+        //         });
+        //     })
+        //     ->with([
+        //         'genres',
+        //         'showtimes' => function ($query) {
+        //             $now = now();
+        //             $query->select('id', 'movies_id', 'theaters_id', 'start_time', 'end_time', 'price')
+        //                 ->where(function ($q) use ($now) {
+        //                     $q->whereNull('end_date')
+        //                         ->orWhere('end_date', '>', $now);
+        //                 })
+        //                 ->with('theaters');
+        //         }
+        //     ])
+        //     ->first();
+
+
         if (!$movie) {
-            return $this->ResponseJson(false, null, "Movies Not found", null, 404);
+            return $this->ResponseJson(false, null, "Movies Not found.", null, 404);
         }
 
         return $this->ResponseJson(true, new MoviesResource($movie), "Movies found", null, 200);
