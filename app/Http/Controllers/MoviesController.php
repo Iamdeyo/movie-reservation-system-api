@@ -34,11 +34,14 @@ class MoviesController extends Controller
             $query->where('title', 'like', "%$search%");
         }
 
-        // ❗ Only include movies with valid showtimes
-        $query->whereHas('showtimes', function ($q) {
-            $q->where(function ($query) {
+        // 📅 Get selected date or use today as default
+        $selectedDate = $request->query('selectedDate', now()->toDateString());
+
+        // ❗ Only include movies with at least one valid showtime on/after selected date
+        $query->whereHas('showtimes', function ($q) use ($selectedDate) {
+            $q->where(function ($query) use ($selectedDate) {
                 $query->whereNull('end_date')
-                    ->orWhere('end_date', '>', now());
+                    ->orWhereDate('end_date', '>=', $selectedDate);
             });
         });
 
@@ -55,15 +58,18 @@ class MoviesController extends Controller
         // 📄 Pagination with eager loading of valid showtimes
         $movies = $query->with([
             'genres',
-            'showtimes' => function ($q) {
-                $q->where(function ($query) {
+            'showtimes' => function ($q) use ($selectedDate) {
+                $q->where(function ($query) use ($selectedDate) {
                     $query->whereNull('end_date')
-                        ->orWhere('end_date', '>', now());
+                        ->orWhereDate('end_date', '>=', $selectedDate);
                 });
+
+                // ⏱️ If selected date is today, exclude showtimes that already started
+                if ($selectedDate === now()->toDateString()) {
+                    $q->where('start_time', '>=', now()->format('H:i:s'));
+                }
             },
         ])->paginate(10)->appends($request->query());
-
-
 
         return $this->ResponseJson(
             true,
@@ -78,6 +84,7 @@ class MoviesController extends Controller
             200
         );
     }
+
     public function all(Request $request): JsonResponse
     {
         $query = Movies::query();
@@ -182,44 +189,47 @@ class MoviesController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        $movie = Movies::with([
-            'genres',
-            'showtimes.theaters'
-        ])->find($id);
+        // $movie = Movies::with([
+        //     'genres',
+        //     'showtimes.theaters'
+        // ])->find($id);
+        $selectedDate = $request->query('selectedDate', now()->toDateString());
+        $nowTime = now()->format('H:i:s');
 
+        $movie = Movies::where('id', $id)
+            ->whereHas('showtimes', function ($query) use ($selectedDate) {
+                $query->where(function ($q) use ($selectedDate) {
+                    $q->whereNull('end_date')
+                        ->orWhereDate('end_date', '>=', $selectedDate);
+                });
+            })
+            ->with([
+                'genres',
+                'showtimes' => function ($query) use ($selectedDate, $nowTime) {
+                    $query->select('id', 'movies_id', 'theaters_id', 'start_time', 'end_time', 'price', 'end_date')
+                        ->where(function ($q) use ($selectedDate) {
+                            $q->whereNull('end_date')
+                                ->orWhereDate('end_date', '>=', $selectedDate);
+                        });
 
-        // $movie = Movies::where('id', $id)
-        //     ->whereHas('showtimes', function ($query) {
-        //         $now = now();
+                    if ($selectedDate === now()->toDateString()) {
+                        $query->where('start_time', '>=', $nowTime);
+                    }
 
-        //         $query->where(function ($q) use ($now) {
-        //             $q->whereNull('end_date')
-        //                 ->orWhere('end_date', '>', $now);
-        //         });
-        //     })
-        //     ->with([
-        //         'genres',
-        //         'showtimes' => function ($query) {
-        //             $now = now();
-        //             $query->select('id', 'movies_id', 'theaters_id', 'start_time', 'end_time', 'price')
-        //                 ->where(function ($q) use ($now) {
-        //                     $q->whereNull('end_date')
-        //                         ->orWhere('end_date', '>', $now);
-        //                 })
-        //                 ->with('theaters');
-        //         }
-        //     ])
-        //     ->first();
-
+                    $query->with('theaters');
+                }
+            ])
+            ->first();
 
         if (!$movie) {
-            return $this->ResponseJson(false, null, "Movies Not found.", null, 404);
+            return $this->ResponseJson(false, null, "Movie not found.", null, 404);
         }
 
-        return $this->ResponseJson(true, new MoviesResource($movie), "Movies found", null, 200);
+        return $this->ResponseJson(true, new MoviesResource($movie), "Movie found", null, 200);
     }
+
 
 
 

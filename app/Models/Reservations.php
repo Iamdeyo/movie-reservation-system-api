@@ -10,7 +10,13 @@ class Reservations extends Model
     /** @use HasFactory<\Database\Factories\ReservationsFactory> */
     use HasFactory;
 
-    public function users()
+    protected $fillable = [
+        'user_id',
+        'showtimes_id',
+        'reservation_date',
+    ];
+
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
@@ -19,9 +25,8 @@ class Reservations extends Model
     {
         return $this->belongsTo(Showtimes::class);
     }
-
     public function seats()
     {
-        return $this->belongsTo(Seats::class);
+        return $this->belongsToMany(Seats::class, 'reservation_seat');
     }
 }

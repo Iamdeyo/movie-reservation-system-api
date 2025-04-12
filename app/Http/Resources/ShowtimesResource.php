@@ -18,6 +18,7 @@ class ShowtimesResource extends JsonResource
         return [
             "id" => $this->id,
             "movieId" => $this->movies_id,
+            "movie" => new MoviesResource($this->whenLoaded('movies')),
             "theaterId" => $this->theaters_id,
             "theater" => new TheatersResource($this->whenLoaded('theaters')),
             "startTime" => $this->start_time,

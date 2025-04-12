@@ -3,10 +3,10 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GenresController;
 use App\Http\Controllers\MoviesController;
+use App\Http\Controllers\ReservationsController;
+use App\Http\Controllers\ShowtimesController;
 use App\Http\Controllers\TheatersController;
 use App\Http\Controllers\UserController;
-use App\Models\Genres;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Route::get('/user', function (Request $request) {
@@ -55,4 +55,13 @@ Route::group(['prefix' => 'genres'], function () {
     Route::post('', [GenresController::class, 'store']);
     Route::patch('{id}', [GenresController::class, 'update']);
     Route::delete('{id}', [GenresController::class, 'destroy']);
+});
+Route::group(['prefix' => 'showtimes',], function () {
+    Route::get('{showtimeId}/{selectedDate}', [ShowtimesController::class, 'getSeats']);
+});
+
+Route::group(['prefix' => 'reservations', 'middleware' => ['auth:sanctum', 'role:admin,user']], function () {
+    Route::get('', [ReservationsController::class, 'index']);
+    Route::get('{id}', [ReservationsController::class, 'show']);
+    Route::post('', [ReservationsController::class, 'store']);
 });
