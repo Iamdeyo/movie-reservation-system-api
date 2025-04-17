@@ -57,7 +57,7 @@ class ReservationsController extends Controller
             $reservation = Reservations::create([
                 'user_id' => $request->user()->id,
                 'showtimes_id' => $request->showtimes_id,
-                'reservation_date' => $request->reservation_date ?? now()->toDateString()
+                'reservation_date' => $request->reservation_date
             ]);
 
             // Attach seats through the pivot table
